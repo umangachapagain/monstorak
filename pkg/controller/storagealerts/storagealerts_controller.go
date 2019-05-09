@@ -4,7 +4,7 @@ import (
 	"context"
 
 	alertsv1alpha1 "github.com/monstorak/monstorak/pkg/apis/alerts/v1alpha1"
-
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,9 +52,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner StorageAlerts
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to secondary resource Jobs and requeue the owner StorageAlerts
+	err = c.Watch(&source.Kind{Type: &v1.Job{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &alertsv1alpha1.StorageAlerts{},
 	})
@@ -77,8 +76,6 @@ type ReconcileStorageAlerts struct {
 
 // Reconcile reads that state of the cluster for a StorageAlerts object and makes changes based on the state read
 // and what is in the StorageAlerts.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
@@ -100,54 +97,55 @@ func (r *ReconcileStorageAlerts) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 	reqLogger.Info("StorageDetails: " + instance.Spec.String())
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+
+	job := newJobForCR(instance)
 
 	// Set StorageAlerts instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	// Check if this Job already exists
+	found := &v1.Job{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+		err = r.client.Create(context.TODO(), job)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		// Pod created successfully - don't requeue
+		// Job created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	// Job already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", found.Namespace, "Job.Name", found.Name)
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *alertsv1alpha1.StorageAlerts) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
+// newJobForCR returns a Job with the same namespace as the cr
+func newJobForCR(cr *alertsv1alpha1.StorageAlerts) *v1.Job {
+	jobTemplate := &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
+			Name:      "ceph-mixin-job",
 			Namespace: cr.Namespace,
-			Labels:    labels,
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
+		Spec: v1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "ceph-mixin",
+							Image: "quay.io/gluster/gluster-mixins:latest",
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
 				},
 			},
 		},
 	}
+	return jobTemplate
 }
