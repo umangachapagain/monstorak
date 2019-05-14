@@ -3,8 +3,13 @@ package storagealerts
 import (
 	"context"
 
+<<<<<<< HEAD
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
+=======
+	"github.com/monstorak/monstorak/pkg/common"
+
+>>>>>>> 3998039... Build not working after Gopkg update
 	alertsv1alpha1 "github.com/monstorak/monstorak/pkg/apis/alerts/v1alpha1"
 	manifests "github.com/monstorak/monstorak/pkg/manifests"
 	corev1 "k8s.io/api/core/v1"
@@ -135,6 +140,8 @@ func (r *ReconcileStorageAlerts) Reconcile(request reconcile.Request) (reconcile
 
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	common.CreateOrUpdateRBAC()
+
 	return reconcile.Result{}, nil
 }
 

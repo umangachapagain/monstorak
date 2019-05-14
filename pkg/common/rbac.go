@@ -20,6 +20,7 @@ func newRbacV1Client() (*v1.RbacV1Client, error) {
 }
 
 func CreateOrUpdateRBAC() error {
+	log.Info("Creating Role/RoleBinding")
 	prometheusK8sRole := newRole(
 		"storage-prometheus",
 		"openshift-storage",

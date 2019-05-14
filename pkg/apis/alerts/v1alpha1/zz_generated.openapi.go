@@ -24,6 +24,7 @@ func schema_pkg_apis_alerts_v1alpha1_StorageAlerts(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StorageAlerts is the Schema for the storagealerts API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -67,6 +68,7 @@ func schema_pkg_apis_alerts_v1alpha1_StorageAlertsSpec(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StorageAlertsSpec defines the desired state of StorageAlerts",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"storageName": {
 						SchemaProps: spec.SchemaProps{
@@ -105,9 +107,8 @@ func schema_pkg_apis_alerts_v1alpha1_StorageAlertsStatus(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StorageAlertsStatus defines the observed state of StorageAlerts",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
