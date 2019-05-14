@@ -32,13 +32,6 @@ func CreateOrUpdateRBAC() error {
 				[]string{"list", "watch"},
 				[]string{},
 			),
-			newPolicyRule(
-				[]string{},
-				[]string{},
-				[]string{},
-				[]string{"get"},
-				[]string{"/metrics"},
-			),
 		),
 	)
 
