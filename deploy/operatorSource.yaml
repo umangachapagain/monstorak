@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata:
+  name: monstorak
+  namespace: openshift-marketplace
+spec:
+  type: appregistry
+  endpoint: "https://quay.io/cnr"
+  registryNamespace: "umangachapagain"
+  displayName: "Monstorak"
+  publisher: "Red Hat Storage Management"
