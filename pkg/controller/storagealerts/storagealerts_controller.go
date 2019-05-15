@@ -141,6 +141,7 @@ func (r *ReconcileStorageAlerts) Reconcile(request reconcile.Request) (reconcile
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	common.CreateOrUpdateRBAC()
+	common.AddLabelToNamespace("openshift-storage", map["openshift.io/cluster-monitoring"]:"true")
 
 	return reconcile.Result{}, nil
 }
