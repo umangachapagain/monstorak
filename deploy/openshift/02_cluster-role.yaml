@@ -80,7 +80,12 @@ rules:
   resources:
   - namespaces
   verbs:
+  - create
+  - delete
   - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - apps
   resources:

@@ -5,10 +5,10 @@ import (
 
 	monv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoring "github.com/coreos/prometheus-operator/pkg/client/versioned"
-	"github.com/monstorak/monstorak/pkg/prometheus"
-	"github.com/monstorak/monstorak/pkg/common"
 	alertsv1alpha1 "github.com/monstorak/monstorak/pkg/apis/alerts/v1alpha1"
+	"github.com/monstorak/monstorak/pkg/common"
 	manifests "github.com/monstorak/monstorak/pkg/manifests"
+	"github.com/monstorak/monstorak/pkg/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -138,13 +138,25 @@ func (r *ReconcileStorageAlerts) Reconcile(request reconcile.Request) (reconcile
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	common.CreateOrUpdateRBAC()
+	err = common.CreateOrUpdateRBAC()
+	if err == nil {
+		reqLogger.Info("Created/Updated RBAC")
+	}
+
 	nsLabel := make(map[string]string)
 	nsLabel["openshift.io/cluster-monitoring"] = "true"
-	common.AddLabelToNamespace("openshift-storage", nsLabel)
-	svcMonitorLabel := make(map[string]string))
-	svcMonitorLabel["app"] = " rook-ceph-mgr"
-	svcMonitorLabel[" rook_cluster"] = "openshift-storage"
-	prometheus.CreateOrUpdateServiceMonitors("rook-ceph-mgr", "http-metrics", "openshift-storage", svcMonitorLabel)
+	err = common.AddLabelToNamespace("openshift-storage", nsLabel)
+	if err == nil {
+		reqLogger.Info("Added label to Namespace", "Namepace :", "openshift-storage")
+	}
+
+	svcMonitorLabel := make(map[string]string)
+	svcMonitorLabel["app"] = "rook-ceph-mgr"
+	svcMonitorLabel["rook_cluster"] = "openshift-storage"
+	err = prometheus.CreateOrUpdateServiceMonitors("rook-ceph-mgr", "http-metrics", "openshift-storage", svcMonitorLabel)
+	if err == nil {
+		reqLogger.Info("Created/Updated ServiceMonitor", "ServiceMonitor :", "rook-ceph-mgr")
+	}
 
 	return reconcile.Result{}, nil
 }

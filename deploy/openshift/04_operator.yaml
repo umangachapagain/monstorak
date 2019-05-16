@@ -67,7 +67,7 @@ metadata:
   labels:
      app: monstorak
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: monstorak
@@ -78,7 +78,7 @@ spec:
     spec:
       serviceAccountName: monstorak
       containers:
-      - image: uchapaga/monstorak:3998039
+      - image: uchapaga/monstorak:fae9de7
         imagePullPolicy: Always
         name: monstorak
         env:

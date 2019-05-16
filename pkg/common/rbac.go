@@ -9,7 +9,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("common_rbac")
+var rbacLog = logf.Log.WithName("common_rbac")
 
 func newRbacV1Client() (*v1.RbacV1Client, error) {
 	client, err := clientcmd.BuildConfigFromFlags("", "")
@@ -20,7 +20,7 @@ func newRbacV1Client() (*v1.RbacV1Client, error) {
 }
 
 func CreateOrUpdateRBAC() error {
-	log.Info("Creating Role/RoleBinding")
+	rbacLog.Info("Creating Role/RoleBinding")
 	prometheusK8sRole := newRole(
 		"storage-prometheus",
 		"openshift-storage",
@@ -148,7 +148,7 @@ func newPolicyRules(rules ...rbac.PolicyRule) []rbac.PolicyRule {
 func createOrUpdateRole(role *rbac.Role) error {
 	rbacV1Client, err := newRbacV1Client()
 	if err != nil {
-		log.Error(err, "Failed to create rbacV1Client")
+		rbacLog.Error(err, "Failed to create rbacV1Client")
 		return err
 	}
 
@@ -156,13 +156,13 @@ func createOrUpdateRole(role *rbac.Role) error {
 	_, err = roles.Create(role)
 
 	if !errors.IsAlreadyExists(err) {
-		log.Error(err, "Failed to create Role", "role: ", role)
+		rbacLog.Error(err, "Failed to create Role", "role: ", role)
 		return err
 	}
 
 	_, err = roles.Update(role)
 	if err != nil {
-		log.Error(err, "Failed to update Role", "role: ", role)
+		rbacLog.Error(err, "Failed to update Role", "role: ", role)
 	}
 	return err
 }
@@ -170,7 +170,7 @@ func createOrUpdateRole(role *rbac.Role) error {
 func createOrUpdateRoleBinding(roleBinding *rbac.RoleBinding) error {
 	rbacV1Client, err := newRbacV1Client()
 	if err != nil {
-		log.Error(err, "Failed to create rbacV1Client")
+		rbacLog.Error(err, "Failed to create rbacV1Client")
 		return err
 	}
 
@@ -178,13 +178,13 @@ func createOrUpdateRoleBinding(roleBinding *rbac.RoleBinding) error {
 	_, err = roleBindings.Create(roleBinding)
 
 	if !errors.IsAlreadyExists(err) {
-		log.Error(err, "Failed to create RoleBinding", "roleBinding: ", roleBinding)
+		rbacLog.Error(err, "Failed to create RoleBinding", "roleBinding: ", roleBinding)
 		return err
 	}
 
 	_, err = roleBindings.Update(roleBinding)
 	if err != nil {
-		log.Error(err, "Failed to update RoleBinding", "roleBinding: ", roleBinding)
+		rbacLog.Error(err, "Failed to update RoleBinding", "roleBinding: ", roleBinding)
 	}
 	return err
 }

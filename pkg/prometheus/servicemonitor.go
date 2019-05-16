@@ -5,7 +5,10 @@ import (
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var smLog = logf.Log.WithName("common_serviceMonitor")
 
 func newMonitoringClient() (*monitoringclient.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", "")
@@ -23,11 +26,15 @@ func CreateOrUpdateServiceMonitors(serviceMonitorName, port, namespace string, l
 	serviceMonitor := createServiceMonitor(serviceMonitorName, port, namespace, labels)
 	serviceMonitorClient, err := newMonitoringClient()
 	_, err = serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Create(serviceMonitor)
+	if err != nil {
+		smLog.Error(err, "Could not create service monitor", "ServiceMonitor :", serviceMonitor)
+		return err
+	}
 	return err
 }
 
 func createServiceMonitor(serviceMonitorName, port, namespace string, labels map[string]string) *monitoringv1.ServiceMonitor {
-	svcMonitor := serviceMonitor(serviceMonitorName, namespace, labels)
+	svcMonitor := serviceMonitor(serviceMonitorName, namespace)
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: labels,
 	}
@@ -46,7 +53,9 @@ func createServiceMonitor(serviceMonitorName, port, namespace string, labels map
 	return svcMonitor
 }
 
-func serviceMonitor(serviceMonitorName string, namespace string, labels map[string]string) *monitoringv1.ServiceMonitor {
+func serviceMonitor(serviceMonitorName string, namespace string) *monitoringv1.ServiceMonitor {
+	label := make(map[string]string)
+	label["app"] = serviceMonitorName
 	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       monitoringv1.DefaultCrdKinds.ServiceMonitor.Kind,
@@ -55,7 +64,7 @@ func serviceMonitor(serviceMonitorName string, namespace string, labels map[stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceMonitorName,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels:    label,
 		},
 	}
 }
