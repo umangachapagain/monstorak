@@ -78,7 +78,7 @@ spec:
     spec:
       serviceAccountName: monstorak
       containers:
-      - image: uchapaga/monstorak:fae9de7
+      - image: uchapaga/monstorak:e78ae34
         imagePullPolicy: Always
         name: monstorak
         env:
