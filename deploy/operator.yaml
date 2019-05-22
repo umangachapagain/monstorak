@@ -17,8 +17,8 @@ spec:
     spec:
       serviceAccountName: monstorak
       containers:
-      - image: uchapaga/monstorak:39d27f2
-        imagePullPolicy: Always
+      - image: uchapaga/monstorak:2f30eb8
+        imagePullPolicy: IfNotPresent
         name: monstorak
         env:
             - name: WATCH_NAMESPACE

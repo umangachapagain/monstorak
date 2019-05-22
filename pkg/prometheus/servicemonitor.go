@@ -23,8 +23,20 @@ func newMonitoringClient() (*monitoringclient.Clientset, error) {
 	return monitoringClient, err
 }
 
+func ServiceMonitorExists(sm *monitoringv1.ServiceMonitor) (*monitoringv1.ServiceMonitor, error) {
+	serviceMonitorClient, err := newMonitoringClient()
+	namespace := sm.GetNamespace()
+	serviceMonitorName := sm.GetObjectMeta().GetName()
+	serviceMonitor, err := serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Get(serviceMonitorName, metav1.GetOptions{})
+	if err != nil {
+		smLog.Error(err, "Could not find service monitor", "ServiceMonitor :", sm)
+		return nil, err
+	}
+	return serviceMonitor, nil
+}
+
 func CreateOrUpdateServiceMonitors(serviceMonitorName, port, namespace string, labels map[string]string) error {
-	serviceMonitor := createServiceMonitor(serviceMonitorName, port, namespace, labels)
+	serviceMonitor := CreateServiceMonitor(serviceMonitorName, port, namespace, labels)
 	serviceMonitorClient, err := newMonitoringClient()
 	oldServiceMonitor, err := serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Get(serviceMonitorName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -49,7 +61,7 @@ func CreateOrUpdateServiceMonitors(serviceMonitorName, port, namespace string, l
 	return err
 }
 
-func createServiceMonitor(serviceMonitorName, port, namespace string, labels map[string]string) *monitoringv1.ServiceMonitor {
+func CreateServiceMonitor(serviceMonitorName, port, namespace string, labels map[string]string) *monitoringv1.ServiceMonitor {
 	svcMonitor := serviceMonitor(serviceMonitorName, namespace)
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: labels,

@@ -8,4 +8,4 @@ spec:
   storageType: "ceph"
   storageVersion: "v14"
   storageAlert:
-    prometheusNamespace: "openshift-monitoring"
+    prometheusNamespace: "openshift-storage"
