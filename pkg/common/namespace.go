@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/pkg/errors"
 	apiV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -18,7 +19,7 @@ func newCoreV1Client() (*v1.CoreV1Client, error) {
 	return v1.NewForConfig(client)
 }
 
-func getNamespace(namespace string) (*apiV1.Namespace, error) {
+func GetNamespace(namespace string) (*apiV1.Namespace, error) {
 	coreClient, err := newCoreV1Client()
 	if err != nil {
 		return nil, err
@@ -41,7 +42,7 @@ func getNamespace(namespace string) (*apiV1.Namespace, error) {
 	return ns, err
 }
 
-func updateNamespace(ns *apiV1.Namespace) error {
+func UpdateNamespace(ns *apiV1.Namespace) error {
 	coreClient, err := newCoreV1Client()
 	if err != nil {
 		return err
@@ -56,14 +57,29 @@ func updateNamespace(ns *apiV1.Namespace) error {
 	return err
 }
 
+func NamespaceHasLabels(namespace string, labels map[string]string) error {
+	ns, err := GetNamespace(namespace)
+	if err != nil {
+		return err
+	}
+	nsLabels := ns.GetLabels()
+	for k, v := range labels {
+		if nsLabels[k] != v {
+			err = errors.Errorf("Some labels are missing")
+			return err
+		}
+	}
+	return nil
+}
+
 func AddLabelToNamespace(namespace string, label map[string]string) error {
-	ns, err := getNamespace(namespace)
+	ns, err := GetNamespace(namespace)
 	if err != nil {
 		nsLog.Error(err, "Could not add label to namespace. Check if namespace exists.", "namespace : ", namespace, "label :", label)
 		return err
 	}
 	ns.ObjectMeta.SetLabels(label)
-	err = updateNamespace(ns)
+	err = UpdateNamespace(ns)
 	if err != nil {
 		nsLog.Error(err, "Could not add label to namespace", "namespace : ", namespace, "label :", label)
 		return err
