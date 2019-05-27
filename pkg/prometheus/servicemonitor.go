@@ -2,26 +2,12 @@ package prometheus
 
 import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var smLog = logf.Log.WithName("common_serviceMonitor")
-
-func newMonitoringClient() (*monitoringclient.Clientset, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", "")
-	if err != nil {
-		return nil, err
-	}
-	monitoringClient, err := monitoringclient.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return monitoringClient, err
-}
 
 func ServiceMonitorExists(sm *monitoringv1.ServiceMonitor) (*monitoringv1.ServiceMonitor, error) {
 	serviceMonitorClient, err := newMonitoringClient()

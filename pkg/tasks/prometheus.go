@@ -7,7 +7,7 @@ import (
 	"github.com/monstorak/monstorak/pkg/prometheus"
 )
 
-func GetPrometheusRule() (*monv1.PrometheusRule, error) {
+func GetPrometheusRule(instance *alertsv1alpha1.StorageAlert) (*monv1.PrometheusRule, error) {
 	f := manifests.NewFactory(instance.Namespace)
 	prometheusK8sRules, err := f.PrometheusK8sRules()
 	if err != nil {

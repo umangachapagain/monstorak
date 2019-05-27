@@ -110,7 +110,7 @@ func (r *ReconcileStorageAlert) Reconcile(request reconcile.Request) (reconcile.
 		return reconcileResult, err
 	}
 	// Get prometheusRule
-	prometheusRule, err := tasks.GetPrometheusRule()
+	prometheusRule, err := tasks.GetPrometheusRule(instance)
 	if err != nil {
 		// Failed to retrieve prometheusRule, requeue
 		reqLogger.Error(err, "Failed to retrieve Prometheus Rules")
