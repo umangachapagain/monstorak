@@ -102,25 +102,31 @@ func (r *ReconcileStorageAlert) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	// Check prerequisites
-	err = tasks.Prerequisites(instance)
-	if err != nil {
-		// Prerequisites not met, requeue
-		reqLogger.Error(err, "Prerequisites not met")
-		return reconcileResult, err
-	}
-	// Get prometheusRule
-	prometheusRule, err := tasks.GetPrometheusRule(instance)
-	if err != nil {
-		// Failed to retrieve prometheusRule, requeue
-		reqLogger.Error(err, "Failed to retrieve Prometheus Rules")
-		return reconcileResult, err
-	}
-	// Deploy prometheusRule
-	err = tasks.DeployPrometheusRule(instance, prometheusRule)
-	if err != nil {
-		reqLogger.Error(err, "Failed to create/update Prometheus Rules")
-		return reconcileResult, err
+	for _, storageSpec := range instance.Spec.Storage {
+		storageNamespace := storageSpec.Namespace
+		serviceMonitor := storageSpec.ServiceMonitor
+		storageProvider := storageSpec.Provider
+		storageVersion := storageSpec.Version
+		// Check prerequisites
+		err = tasks.Prerequisites(storageNamespace, serviceMonitor)
+		if err != nil {
+			// Prerequisites not met, requeue
+			reqLogger.Error(err, "Some prerequisites are not met")
+			return reconcileResult, err
+		}
+		// Get prometheusRule
+		prometheusRule, err := tasks.GetPrometheusRule(storageNamespace, storageProvider, storageVersion)
+		if err != nil {
+			// Failed to retrieve prometheusRule, requeue
+			reqLogger.Error(err, "Failed to retrieve Prometheus Rules", "StorageProvider", storageProvider, "Storage Version", storageVersion)
+			return reconcileResult, err
+		}
+		// Deploy prometheusRule
+		err = tasks.DeployPrometheusRule(storageNamespace, prometheusRule)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create/update Prometheus Rules", "StorageProvider", storageProvider, "Storage Version", storageVersion)
+			return reconcileResult, err
+		}
 	}
 
 	return reconcile.Result{}, nil

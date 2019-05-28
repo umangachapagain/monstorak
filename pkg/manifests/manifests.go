@@ -9,7 +9,11 @@ import (
 )
 
 var (
-	CephRules = "jsonnet/manifests/ceph-prometheus-rules.yaml"
+	rules = map[string]map[string]string{
+		"ceph": map[string]string{
+			"v14.2.1": "jsonnet/manifests/ceph-prometheus-rules.yaml",
+		},
+	}
 )
 
 func MustAssetReader(asset string) io.Reader {
@@ -26,8 +30,8 @@ func NewFactory(namespace string) *Factory {
 	}
 }
 
-func (f *Factory) PrometheusK8sRules() (*monv1.PrometheusRule, error) {
-	r, err := f.NewPrometheusRule(MustAssetReader(CephRules))
+func (f *Factory) PrometheusK8sRules(storageProvider, storageVersion string) (*monv1.PrometheusRule, error) {
+	r, err := f.NewPrometheusRule(MustAssetReader(rules[storageProvider][storageVersion]))
 	if err != nil {
 		return nil, err
 	}

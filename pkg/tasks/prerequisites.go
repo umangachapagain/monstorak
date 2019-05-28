@@ -1,32 +1,29 @@
 package tasks
 
 import (
-	alertsv1alpha1 "github.com/monstorak/monstorak/pkg/apis/alerts/v1alpha1"
 	"github.com/monstorak/monstorak/pkg/common"
 	"github.com/monstorak/monstorak/pkg/prometheus"
 )
 
 // Prerequisites needed for Monitoring to work with Storage
-func Prerequisites(instance *alertsv1alpha1.StorageAlert) error {
-	namespace := instance.Spec.StorageAlert.PrometheusNamespace
+func Prerequisites(storageNamespace, serviceMonitor string) error {
 	// Check if Namespace exists
-	_, err := common.GetNamespace(namespace)
+	_, err := common.GetNamespace(storageNamespace)
 	if err != nil {
 		return err
 	}
 	// Check if Namespace has required labels
 	label := make(map[string]string)
 	label["openshift.io/cluster-monitoring"] = "true"
-	err = common.NamespaceHasLabels(namespace, label)
+	err = common.NamespaceHasLabels(storageNamespace, label)
 	if err != nil {
 		return err
 	}
-	// Check if ServiceMonitor exists
 	svcMonitorLabel := make(map[string]string)
-	svcMonitorLabel["app"] = "rook-ceph-mgr"
-	svcMonitorLabel["rook_cluster"] = "openshift-storage"
-	// Create a Service Monitor object
-	sm := prometheus.CreateServiceMonitor("rook-ceph-mgr", "http-metrics", "openshift-storage", svcMonitorLabel)
+	svcMonitorLabel["app"] = serviceMonitor
+	// Create a ServiceMonitor object
+	sm := prometheus.CreateServiceMonitor(serviceMonitor, "http-metrics", storageNamespace, svcMonitorLabel)
+	// Check if ServiceMonitor exists
 	_, err = prometheus.ServiceMonitorExists(sm)
 	if err != nil {
 		return err
