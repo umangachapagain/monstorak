@@ -13,6 +13,9 @@ var (
 		"ceph": map[string]string{
 			"v14.2.1": "jsonnet/manifests/ceph-prometheus-rules.yaml",
 		},
+		"noobaa": map[string]string{
+			"v1.0": "jsonnet/manifests/noobaa-prometheus-rules.yaml",
+		},
 	}
 )
 
