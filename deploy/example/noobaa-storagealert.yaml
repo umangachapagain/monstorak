@@ -5,10 +5,10 @@ metadata:
   namespace: storage-monitoring
 spec:
   storage:
-  - provider: "nooba"
+  - provider: "noobaa"
     version: "v1.0"
     namespace: "openshift-storage"
-    serviceMonitor: "nooba-mgr"
+    serviceMonitor: "noobaa-mgr"
   prometheus:
     namespace: "openshift-monitoring"
-    label: "prometheus:k8s"
+    label: {"prometheus":"K8s"}
