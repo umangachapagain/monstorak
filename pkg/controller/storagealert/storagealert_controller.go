@@ -22,11 +22,6 @@ import (
 
 var log = logf.Log.WithName("controller_storagealert")
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new StorageAlert Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -84,9 +79,15 @@ var (
 	reconcileResult = reconcile.Result{RequeueAfter: reconcilePeriod}
 )
 
+const (
+	FailedPrerequisites              string = "Some prerequisites are not met"
+	FailedRetrievePrometheusRule     string = "Failed to retrieve Prometheus Rules"
+	FailedCreateUpdatePrometheusRule string = "Failed to create/update Prometheus Rules"
+)
+
 func (r *ReconcileStorageAlert) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling StorageAlert")
+	reqLogger.Info("Reconciling StorageAlerts")
 
 	// Fetch the StorageAlert instance
 	instance := &alertsv1alpha1.StorageAlert{}
@@ -102,29 +103,33 @@ func (r *ReconcileStorageAlert) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	for _, storageSpec := range instance.Spec.Storage {
+	for index, storageSpec := range instance.Spec.Storage {
 		storageNamespace := storageSpec.Namespace
 		serviceMonitor := storageSpec.ServiceMonitor
 		storageProvider := storageSpec.Provider
 		storageVersion := storageSpec.Version
+		reqLogger.WithValues("Storage Provider", storageProvider, "Storage Namespace", storageNamespace,
+			"Storage Version", storageVersion, "Service Monitor", serviceMonitor)
+		reqLogger.Info("Reconciling StorageAlert", "Index", index)
 		// Check prerequisites
 		err = tasks.Prerequisites(storageNamespace, serviceMonitor)
 		if err != nil {
 			// Prerequisites not met, requeue
-			reqLogger.Error(err, "Some prerequisites are not met")
+			reqLogger.Error(err, FailedPrerequisites)
 			return reconcileResult, err
 		}
 		// Get prometheusRule
 		prometheusRule, err := tasks.GetPrometheusRule(storageNamespace, storageProvider, storageVersion)
 		if err != nil {
 			// Failed to retrieve prometheusRule, requeue
-			reqLogger.Error(err, "Failed to retrieve Prometheus Rules", "StorageProvider", storageProvider, "Storage Version", storageVersion)
+			reqLogger.Error(err, FailedRetrievePrometheusRule)
 			return reconcileResult, err
 		}
 		// Deploy prometheusRule
 		err = tasks.DeployPrometheusRule(storageNamespace, prometheusRule)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create/update Prometheus Rules", "StorageProvider", storageProvider, "Storage Version", storageVersion)
+			// Failed to create/update prometheusRule, requeue
+			reqLogger.Error(err, FailedCreateUpdatePrometheusRule)
 			return reconcileResult, err
 		}
 	}

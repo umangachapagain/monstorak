@@ -2,83 +2,23 @@ package prometheus
 
 import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var smLog = logf.Log.WithName("common_serviceMonitor")
+var smLog = logf.Log.WithName("prometheus_serviceMonitor")
 
-func ServiceMonitorExists(sm *monitoringv1.ServiceMonitor) (*monitoringv1.ServiceMonitor, error) {
+const (
+	ServiceMonitorNotFound string = "Service Monitor could not be found"
+)
+
+func ServiceMonitorExists(serviceMonitorName, namespace string) (*monitoringv1.ServiceMonitor, error) {
+	smLog.WithValues("Service Monitor", serviceMonitorName, "Namespace", namespace)
 	serviceMonitorClient, err := newMonitoringClient()
-	namespace := sm.GetNamespace()
-	serviceMonitorName := sm.GetObjectMeta().GetName()
 	serviceMonitor, err := serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Get(serviceMonitorName, metav1.GetOptions{})
 	if err != nil {
-		smLog.Error(err, "Could not find service monitor", "ServiceMonitor :", sm)
+		smLog.Error(err, ServiceMonitorNotFound)
 		return nil, err
 	}
 	return serviceMonitor, nil
-}
-
-func CreateOrUpdateServiceMonitors(serviceMonitorName, port, namespace string, labels map[string]string) error {
-	serviceMonitor := CreateServiceMonitor(serviceMonitorName, port, namespace, labels)
-	serviceMonitorClient, err := newMonitoringClient()
-	oldServiceMonitor, err := serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Get(serviceMonitorName, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		_, err = serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Create(serviceMonitor)
-		if err != nil {
-			smLog.Error(err, "Could not create service monitor", "ServiceMonitor :", serviceMonitor)
-			return err
-		}
-		smLog.Info("Created service monitor")
-		return err
-	}
-	if err != nil {
-		smLog.Error(err, "Could not retrieve service monitor", "ServiceMonitor :", serviceMonitor)
-		return err
-	}
-	serviceMonitor.ResourceVersion = oldServiceMonitor.ResourceVersion
-	_, err = serviceMonitorClient.Monitoring().ServiceMonitors(namespace).Update(serviceMonitor)
-	if err != nil {
-		smLog.Error(err, "Could not update service monitor", "ServiceMonitor :", serviceMonitor)
-		return err
-	}
-	return err
-}
-
-func CreateServiceMonitor(serviceMonitorName, port, namespace string, labels map[string]string) *monitoringv1.ServiceMonitor {
-	svcMonitor := serviceMonitor(serviceMonitorName, namespace)
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: labels,
-	}
-	endpoint := monitoringv1.Endpoint{
-		Port:     port,
-		Path:     "/metrics",
-		Interval: "5s",
-	}
-	svcMonitor.Spec = monitoringv1.ServiceMonitorSpec{
-		NamespaceSelector: monitoringv1.NamespaceSelector{
-			MatchNames: []string{namespace},
-		},
-		Selector:  labelSelector,
-		Endpoints: []monitoringv1.Endpoint{endpoint},
-	}
-	return svcMonitor
-}
-
-func serviceMonitor(serviceMonitorName string, namespace string) *monitoringv1.ServiceMonitor {
-	label := make(map[string]string)
-	label["app"] = serviceMonitorName
-	return &monitoringv1.ServiceMonitor{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       monitoringv1.DefaultCrdKinds.ServiceMonitor.Kind,
-			APIVersion: monitoringv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      serviceMonitorName,
-			Namespace: namespace,
-			Labels:    label,
-		},
-	}
 }

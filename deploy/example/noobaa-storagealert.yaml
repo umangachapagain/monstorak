@@ -1,7 +1,7 @@
 apiVersion: alerts.monstorak.org/v1alpha1
 kind: StorageAlert
 metadata:
-  name: nooba-storagealert
+  name: noobaa-storagealert
   namespace: storage-monitoring
 spec:
   storage:
